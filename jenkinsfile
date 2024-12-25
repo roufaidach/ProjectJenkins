@@ -1,59 +1,49 @@
 pipeline {
     agent any
-
-    tools {
-        maven 'Maven 3' // Name of the Maven installation in Jenkins
-    }
-
     environment {
+        MAVEN_HOME = 'C:\\apache-maven-3.9.9'
+        PATH = "${MAVEN_HOME}\\bin;${env.PATH}"
         DOCKER_IMAGE = 'roufaida1/calculator:latest'
         DOCKER_USERNAME = 'roufaida1'
         DOCKER_PASSWORD = 'Roufaidaroufaida@2020'
     }
-
     stages {
         stage('Build') {
             steps {
                 script {
-                    echo 'Starting build process...'
-                    sh 'mvn clean package' // Use `sh` for Unix or `bat` for Windows
+                    bat 'mvn clean package'
                 }
             }
         }
         stage('Unit Tests') {
             steps {
                 script {
-                    echo 'Running unit tests...'
-                    sh 'mvn test'
+                    bat 'mvn test'
                 }
             }
         }
         stage('Build Docker Image') {
             steps {
                 script {
-                    echo 'Building Docker image...'
-                    sh "docker build -t ${DOCKER_IMAGE} ."
+                    bat "docker build -t %DOCKER_IMAGE% ."
                 }
             }
         }
         stage('Push Docker Image to DockerHub') {
             steps {
                 script {
-                    echo 'Logging in to DockerHub...'
-                    sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin"
-                    echo 'Pushing Docker image to DockerHub...'
-                    sh "docker push ${DOCKER_IMAGE}"
+                    bat "docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%"
+                    bat "docker push %DOCKER_IMAGE%"
                 }
             }
         }
     }
-
     post {
-        success {
-            echo 'Pipeline completed successfully.'
-        }
         failure {
-            echo 'The pipeline failed.'
+            echo 'Pipeline failed'
+        }
+        success {
+            echo 'Pipeline succeeded'
         }
     }
 }
