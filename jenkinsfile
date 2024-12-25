@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_IMAGE = 'roufaida1/calculator:latest'
+        DOCKER_USERNAME = 'roufaida1'
+        DOCKER_PASSWORD = 'Roufaidaroufaida@2020'
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    echo 'Début de la construction de l\'application...'
+                    bat 'mvn clean package'
+                }
+            }
+        }
+        stage('Unit Tests') {
+            steps {
+                script {
+                    echo 'Exécution des tests unitaires...'
+                    bat 'mvn test'
+                }
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo 'Construction de l\'image Docker en cours...'
+                    bat "docker build -t %DOCKER_IMAGE% ."
+                }
+            }
+        }
+        stage('Push Docker Image to DockerHub') {
+            steps {
+                script {
+                    echo 'Connexion à DockerHub en cours...'
+                    bat "docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%"
+                    echo 'Push de l\'image Docker sur DockerHub en cours...'
+                    bat "docker push %DOCKER_IMAGE%"
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+        failure {
+            echo 'Le pipeline a échoué.'
+        }
+    }
+}
