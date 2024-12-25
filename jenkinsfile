@@ -1,49 +1,53 @@
 pipeline {
-    agent any
-    environment {
-        MAVEN_HOME = 'C:\\apache-maven-3.9.9'
-        PATH = "${MAVEN_HOME}\\bin;${env.PATH}"
-        DOCKER_IMAGE = 'roufaida1/calculator:latest'
-        DOCKER_USERNAME = 'roufaida1'
-        DOCKER_PASSWORD = 'Roufaidaroufaida@2020'
-    }
-    stages {
-        stage('Build') {
-            steps {
-                script {
-                    bat 'mvn clean package'
-                }
-            }
-        }
-        stage('Unit Tests') {
-            steps {
-                script {
-                    bat 'mvn test'
-                }
-            }
-        }
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    bat "docker build -t %DOCKER_IMAGE% ."
-                }
-            }
-        }
-        stage('Push Docker Image to DockerHub') {
-            steps {
-                script {
-                    bat "docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%"
-                    bat "docker push %DOCKER_IMAGE%"
-                }
-            }
-        }
-    }
-    post {
-        failure {
-            echo 'Pipeline failed'
-        }
-        success {
-            echo 'Pipeline succeeded'
-        }
-    }
+   agent any
+   tools {
+       maven 'Maven'
+   }
+   environment {
+       DOCKER_IMAGE = 'roufaida1/calculator:latest'
+       DOCKER_CREDENTIALS = credentials('docker-hub-credentials') 
+   }
+   stages {
+       stage('Build') {
+           steps {
+               bat 'mvn clean package'
+           }
+       }
+       
+       stage('Test') {
+           steps {
+               bat 'mvn test'
+           }
+       }
+
+       stage('Docker Build') {
+           steps {
+               script {
+                   bat 'docker build -t %DOCKER_IMAGE% .'
+               }
+           }
+       }
+
+       stage('Docker Push') {
+           steps {
+               script {
+                   withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                       bat 'docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%'
+                       bat 'docker push %DOCKER_IMAGE%'
+                   }
+               }
+           }
+       }
+   }
+   post {
+       always {
+           bat 'docker logout'
+       }
+       success {
+           echo 'Pipeline succeeded'
+       }
+       failure {
+           echo 'Pipeline failed'
+       }
+   }
 }
