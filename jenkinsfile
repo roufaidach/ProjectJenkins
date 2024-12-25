@@ -8,12 +8,17 @@ pipeline {
         DOCKER_CREDENTIALS = credentials('docker-hub-credentials') 
     }
     stages {
+        stage('Debug Environment') {
+            steps {
+                bat 'echo PATH=%PATH%'
+                bat 'docker --version'
+            }
+        }
         stage('Build') {
             steps {
                 bat 'mvn clean package'
             }
         }
-        
         stage('Test') {
             steps {
                 bat 'mvn test'
